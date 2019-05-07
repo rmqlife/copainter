@@ -109,6 +109,7 @@ def get_points_data():
     data = {}
     
     center1, center2 = tracker()
+    print('center1', center1)
     data["x"] = center1[0] if center1 else None
     data["y"] = center1[1] if center1 else None
     data["pressed"] = 1
