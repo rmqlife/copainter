@@ -7,7 +7,7 @@ def read_serial(ser):
     return l
 
 ser1 = serial.Serial('COM3', 9600) #, timeout=1, bytesize=8, parity='N', stopbits=2, xonxoff=1, rtscts=1)
-ser2 = serial.Serial('COM4', 9600)
+ser2 = ser1 #serial.Serial('COM4', 9600)
 
 for i in range(100):
     l1 = read_serial(ser1)
