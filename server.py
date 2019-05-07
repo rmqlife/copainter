@@ -16,14 +16,16 @@ app = Flask(__name__, static_folder=STATIC_FOLDER, static_path=CUSTOM_STATIC_DIR
 colorLowers = { 'GR':  (30, round(25*2.55), round(20*2.55)),
                 'OR': (7, round(50*2.55), round(60*2.55)),
                 'RD1': (0, round(70*2.55), round(30*2.55)),
-                'RD2': (170, round(70*2.55), round(30*2.55))
+                'RD2': (170, round(70*2.55), round(30*2.55)),
+                'BL': (100, round(70*2.55), round(30*2.55))
                 }
 colorUppers = { 'GR':  (80, round(80*2.55), round(100*2.55)),
                 'OR': (30, round(100*2.55), round(100*2.55)),
                 'RD1': (2, round(100*2.55), round(60*2.55)),
-                'RD2': (180, round(100*2.55), round(60*2.55))
+                'RD2': (180, round(100*2.55), round(60*2.55)),
+                'BL': (128, round(100*2.55), round(65*2.55))
                 }
-colorNames = ['GR', 'RD']
+colorNames = ['GR', 'BL']
 center1_prev = None
 center2_prev = None
 vs = None
@@ -106,23 +108,19 @@ def tracker():
 
 @app.route('/getData')
 def get_points_data():
-    global idx
+    global idx, center1_prev, center2_prev
     idx += 1
     data = {}
     
     center1, center2 = tracker()
-    if center1 is None:
+    if center1 is None and center1_prev is not None:
     	center1 = center1_prev
-    if center2 is None:
+    if center2 is None and center2_prev is not None:
     	center2 = center2_prev
-    # data["gx"] = center1[0] if center1 else None
-    # data["gy"] = center1[1] if center1 else None
-    # data["rx"] = center2[0] if center2 else None
-    # data["ry"] = center2[1] if center2 else None
-    data["gx"] = center1[0]
-    data["gy"] = center1[1]
-    data["rx"] = center2[0]
-    data["ry"] = center2[1]
+    data["gx"] = center1[0] if center1 else None
+    data["gy"] = center1[1] if center1 else None
+    data["rx"] = center2[0] if center2 else None
+    data["ry"] = center2[1] if center2 else None
     center1_prev, center2_prev = center1, center2
 
     data["gpressed"] = 1
