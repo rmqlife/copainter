@@ -3,7 +3,6 @@ import json
 from flask import Flask
 from flask import request, render_template, send_from_directory, jsonify
 from collections import deque
-from imutils.video import VideoStream
 import cv2
 import imutils
 import time
@@ -56,8 +55,13 @@ def circlePoints(points, radius, center):
 
 points = circlePoints(99, 100, (300, 300))
 
+
 def tracker():
-    frame = vs.read()
+    ret, frame = vs.read()
+    if not ret:
+    	print('Error in reading frame.')
+    	return tracker()
+
     frame = imutils.resize(frame, width=1200)
     frame = cv2.flip(frame, 1)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
@@ -96,7 +100,7 @@ def tracker():
         centers_str += colorNames[i] + center_str
 
     return centers
-    # return centers_str.encode('utf-8')
+
 
 @app.route('/getData')
 def get_points_data():
@@ -105,8 +109,8 @@ def get_points_data():
     data = {}
     
     center1, center2 = tracker()
-    data["x"] = center1[0]
-    data["y"] = center1[1]
+    data["x"] = center1[0] if center1 else None
+    data["y"] = center1[1] if center1 else None
     data["pressed"] = 1
     data["jstick"] = -1
     
@@ -115,8 +119,10 @@ def get_points_data():
 ## run the server app
 if __name__ == "__main__":
     # Init tracker
-    vs = VideoStream(src=0).start()
+    vs = cv2.VideoCapture(0)
     time.sleep(2.0)
+    if not vs.isOpened():
+    	vs.open()
 
     idx = -1
     app.run(host='0.0.0.0', port=8080, debug=True)
