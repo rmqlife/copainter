@@ -24,6 +24,8 @@ colorUppers = { 'GR':  (80, round(80*2.55), round(100*2.55)),
                 'RD2': (180, round(100*2.55), round(60*2.55))
                 }
 colorNames = ['GR', 'RD']
+center1_prev = None
+center2_prev = None
 vs = None
 
 
@@ -109,11 +111,24 @@ def get_points_data():
     data = {}
     
     center1, center2 = tracker()
-    print('center1', center1)
-    data["x"] = center1[0] if center1 else None
-    data["y"] = center1[1] if center1 else None
-    data["pressed"] = 1
-    data["jstick"] = -1
+    if center1 is None:
+    	center1 = center1_prev
+    if center2 is None:
+    	center2 = center2_prev
+    # data["gx"] = center1[0] if center1 else None
+    # data["gy"] = center1[1] if center1 else None
+    # data["rx"] = center2[0] if center2 else None
+    # data["ry"] = center2[1] if center2 else None
+    data["gx"] = center1[0]
+    data["gy"] = center1[1]
+    data["rx"] = center2[0]
+    data["ry"] = center2[1]
+    center1_prev, center2_prev = center1, center2
+
+    data["gpressed"] = 1
+    data["gjstick"] = -1
+    data["rpressed"] = 1
+    data["rjstick"] = -1
     
     return json.dumps(data)
 
@@ -126,7 +141,7 @@ if __name__ == "__main__":
     	vs.open()
 
     idx = -1
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=8010, debug=True)
 
 
     # End the application
