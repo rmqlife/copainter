@@ -83,18 +83,13 @@ const sketch = function(p) {
       if (!cur_modelIsActive){
         cur_modelIsActive = modelIsActive
       }
-      if (!modelLoaded || !modelIsActive) {
+      if (!modelLoaded || !cur_modelIsActive) {
         return;
       }
-      console.log("got into modal drawing")
+      console.log("Model is drawing.")
+      
       // New state.
       pen = previousPen;
-      if (modelState === undefined) {
-        console.log("not enought strokes to predict. modal drawing is stopped.")
-        // cur_modelIsActive = false;
-        modelIsActive = false;
-        return;
-      }
       modelState = model.update([dx, dy, ...pen], modelState);
       const pdf = model.getPDF(modelState, temperature);
       [dx, dy, ...pen] = model.sample(pdf);
@@ -102,7 +97,7 @@ const sketch = function(p) {
       // If we finished the previous drawing, start a new one.
       if (pen[PEN.END] === 1) {
         console.log('finished this one');
-        modelIsActive = false;
+        cur_modelIsActive = false;
       } else {
         // Only draw on the paper if the pen is still touching the paper.
         if (previousPen[PEN.DOWN] === 1) {
@@ -157,68 +152,71 @@ const sketch = function(p) {
     var RpreviousUserPen = 0;
     
     var idx = -1;    
-    var id = setInterval(getData, 20);
+    var id = setInterval(getData, 10);
   
     function getData() {
-      idx += 1;
-      // if (idx >= 100) {
-      //   //t1 = performance.now();
-      //   console.log("stop reading data");
-      //   clearInterval(id);
-      //   //console.log("it took " + (t1 - t0) + " milliseconds.")
-      // } else {
-        $.get("/getData", function (data) {
-          data = JSON.parse(data);
-          console.log(data["gpressed"], data["rpressed"]);
-          document.getElementById("green-cursor").style.left = data["gx"] + "px";
-          document.getElementById("green-cursor").style.top = (data["gy"] + 144) + "px";
-          GmouseX = data["gx"];
-          GmouseY = data["gy"];
-          GprevPressed = GcurPressed;
-          GcurPressed = data["gpressed"];
+        idx += 1;
+        //if (idx >= 100) {
+            //t1 = performance.now();
+          //  console.log("stop reading data");
+           // clearInterval(id);
+            //console.log("it took " + (t1 - t0) + " milliseconds.")
+        //} else {
+            $.get("/getData", function (data) {
+                data = JSON.parse(data);
+                console.log(data);
+                //console.log(p.width, p.height);
+                document.getElementById("green-cursor").style.left = data["gx"] + "px";
+                document.getElementById("green-cursor").style.top = (data["gy"] + 144) + "px";
+                GmouseX = data["gx"];
+                GmouseY = data["gy"];
+                GprevPressed = GcurPressed;
+                GcurPressed = data["gpressed"];
 
-          document.getElementById("red-cursor").style.left = data["rx"] + "px";
-          document.getElementById("red-cursor").style.top = (data["ry"] + 144) + "px";
-          RmouseX = data["rx"];
-          RmouseY = data["ry"];
-          RprevPressed = RcurPressed;
-          RcurPressed = data["rpressed"];
+                document.getElementById("red-cursor").style.left = data["rx"] + "px";
+                document.getElementById("red-cursor").style.top = (data["ry"] + 144) + "px";
+                RmouseX = data["rx"];
+                RmouseY = data["ry"];
+                RprevPressed = RcurPressed;
+                RcurPressed = data["rpressed"];
 
-          if (GcurPressed === 1 && data['gjstick'] !== -1) {
-            GcurrentColorIndex = Math.floor(data['gjstick'] / 15);
-            GcurrentColor = COLORS[GcurrentColorIndex].hex;
-            //document.querySelector('.gactive').classList.remove('gactive');
-            //document.getElementById("color" + GcurrentColorIndex.toString()).className = "gactive";
-          }
-          if (RcurPressed === 1 && data['rjstick'] !== -1) {
-            RcurrentColorIndex = Math.floor(data['rjstick'] / 15);
-            RcurrentColor = COLORS[RcurrentColorIndex].hex;
-            //document.querySelector('.ractive').classList.remove('ractive');
-            //document.getElementById("color" + RcurrentColorIndex.toString()).className = "ractive";
-          }
-          if (!modelIsActive) {
-            if (GprevPressed === 0 && GcurPressed === 1) {
-              GmousePressed();
-            } else if (GprevPressed === 1 && GcurPressed === 1) {
-              GmouseDragged();
-            } else if (GprevPressed === 1 && GcurPressed === 0) {
-              GmouseReleased();
-            }
+                if (GcurPressed === 1 && data['gjstick'] !== -1) {
+                  GcurrentColorIndex = Math.floor(data['gjstick'] / 15);
+                  GcurrentColor = COLORS[GcurrentColorIndex].hex;
+                  document.querySelector('.gactive').classList.remove('gactive');
+                  document.getElementById("color" + GcurrentColorIndex.toString()).className = "gactive";
+                } 
+                if (RcurPressed === 1 && data['rjstick'] !== -1) {
+                  RcurrentColorIndex = Math.floor(data['rjstick'] / 15);
+                  RcurrentColor = COLORS[RcurrentColorIndex].hex;
+                  document.querySelector('.ractive').classList.remove('ractive');
+                  document.getElementById("color" + RcurrentColorIndex.toString()).className = "ractive";
+                }
 
-            if (RprevPressed === 0 && RcurPressed === 1) {
-              RmousePressed();
-            } else if (RprevPressed === 1 && RcurPressed === 1) {
-              RmouseDragged();
-            } else if (RprevPressed === 1 && RcurPressed === 0) {
-              RmouseReleased();
-            }
-          }
+                if (GprevPressed === 0 && GcurPressed === 1) {
+                    GmousePressed();
+                } else if (GprevPressed === 1 && GcurPressed === 1) {
+                    GmouseDragged();
+                } else if (GprevPressed === 1 && GcurPressed === 0) {
+                    GmouseReleased();
+                }
 
-          if (GcurPressed === 1 && !GisInBounds() || (RcurPressed === 1 && !RisInBounds())) {
-            modelIsActive = true;
-          }
-        })
-      // }
+                if (RprevPressed === 0 && RcurPressed === 1) {
+                    RmousePressed();
+                } else if (RprevPressed === 1 && RcurPressed === 1) {
+                    RmouseDragged();
+                } else if (RprevPressed === 1 && RcurPressed === 0) {
+                    RmouseReleased();
+                }
+
+                //need to edit
+                
+                if (GcurPressed === 1 && !GisInBounds() || (RcurPressed === 1 && !RisInBounds())) {
+                    console.log("start draw");
+                    modelIsActive = true;
+                }
+            })
+        //}
     }
   
     function GisInBounds() {
@@ -270,7 +268,6 @@ const sketch = function(p) {
                 // Encode this line as a stroke, and feed it to the model.
                 lastHumanStroke = model.lineToStroke(currentRawLineSimplified, [GstartX, GstartY]);
                 encodeStrokes(lastHumanStroke);
-                console.log(lastHumanStroke);
             }
             GcurrentRawLine = [];
             GpreviousUserPen = GuserPen;
@@ -288,7 +285,6 @@ const sketch = function(p) {
                 // Encode this line as a stroke, and feed it to the model.
                 lastHumanStroke = model.lineToStroke(currentRawLineSimplified, [RstartX, RstartY]);
                 encodeStrokes(lastHumanStroke);
-                console.log(lastHumanStroke);
             }
             RcurrentRawLine = [];
             RpreviousUserPen = RuserPen;
@@ -410,9 +406,7 @@ const sketch = function(p) {
     };
   
     function encodeStrokes(sequence) {
-      console.log("encodeStrokes")
       if (sequence.length <= 5) {
-        console.log("not enough strokes, encodeStrokes return")
         return;
       }
   
@@ -423,6 +417,7 @@ const sketch = function(p) {
   
       // Reset the actual model we're using to this one that has the encoded strokes.
       modelState = model.copyState(newState);
+      
       const lastHumanLine = lastHumanDrawing[lastHumanDrawing.length-1];
       x = lastHumanLine[0];
       y = lastHumanLine[1];

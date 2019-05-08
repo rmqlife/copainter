@@ -30,25 +30,37 @@ def serial_ports():
     return result
 
 
-def read_serial(ser):
-    s = ser.read(size=4)# .decode("utf-8")
-    l = list()
 
-    for i in range(len(s)):
-        if int(s[i])==111 and int(s[(i+3)%4])==222:
-            l.append(int(s[(i+1)%4]))
-            l.append(int(s[(i+2)%4]))
-            return l
-    l.append(-1)
-    l.append(-1)
-    return l
+def read_serial(ser, ls = [(1,0),(1,0),(1,0),(1,0)]):
+    ser.flushInput()
+    for _ in range(100):
+        s = ser.read(size=4)# .decode("utf-8")
+        l = list()
+        for i in range(len(s)):
+            if int(s[i])==111 and int(s[(i+3)%4])==222:
+                l.append(int(s[(i+1)%4]))
+                l.append(int(s[(i+2)%4]))
+                if l[0] not in [0,1]:
+                    return read_serial(ser,ls)
+                if len(ls)>100:
+                    ls = ls[90:]
+                ls.append(l)
+                if l[0] == 1 and not (ls[-2][0] == 1 and ls[-3][0] == 1 and ls[-4][0] == 1 and ls[-5][0] == 1):
+                        return read_serial(ser,ls)
+                return l
+    return read_serial(ser,ls)
+    # l.append(-1)
+    # l.append(-1)
+    # return l
 
 if __name__=="__main__":
     ports = serial_ports()
+    ports = ports[1:]
+
     print("ports", ports)
     sers = list()
     for port in ports:
-        ser = serial.Serial(port, 9600) #, timeout=1, bytesize=8, parity='N', stopbits=2, xonxoff=1, rtscts=1)
+        ser = serial.Serial(port, 9600, timeout=0.05) #, timeout=1, bytesize=8, parity='N', stopbits=2, xonxoff=1, rtscts=1)
         sers.append(ser)
 
     

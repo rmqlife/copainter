@@ -17,15 +17,15 @@ colorLowers = { 'GR':  (30, round(25*2.55), round(20*2.55)),
                 'OR': (7, round(50*2.55), round(60*2.55)),
                 'RD1': (0, round(70*2.55), round(30*2.55)),
                 'RD2': (170, round(70*2.55), round(30*2.55)),
-                'BL': (100, round(70*2.55), round(30*2.55))
+                'BL': (100, round(50*2.55), round(30*2.55))
                 }
 colorUppers = { 'GR':  (80, round(80*2.55), round(100*2.55)),
                 'OR': (30, round(100*2.55), round(100*2.55)),
-                'RD1': (2, round(100*2.55), round(60*2.55)),
-                'RD2': (180, round(100*2.55), round(60*2.55)),
-                'BL': (128, round(100*2.55), round(65*2.55))
+                'RD1': (5, round(100*2.55), round(100*2.55)),
+                'RD2': (180, round(100*2.55), round(100*2.55)),
+                'BL': (128, round(100*2.55), round(100*2.55))
                 }
-colorNames = ['GR', 'BL']
+colorNames = ['GR', 'RD']
 center1_prev = None
 center2_prev = None
 vs = None
@@ -63,10 +63,10 @@ points = circlePoints(99, 100, (300, 300))
 def tracker():
     ret, frame = vs.read()
     if not ret:
-    	print('Error in reading frame.')
-    	return tracker()
+        print('Error in reading frame.')
+        return tracker()
 
-    frame = imutils.resize(frame, width=1200)
+    frame = imutils.resize(frame, height=720)
     frame = cv2.flip(frame, 1)
     blurred = cv2.GaussianBlur(frame, (11, 11), 0)
     hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -106,6 +106,34 @@ def tracker():
     return centers
 
 
+from test_serial import serial_ports, read_serial
+import serial
+def parse_serial():
+    global sers
+    global has_ser
+    if not has_ser:
+        ports = serial_ports()
+        ports = ports[1:]
+
+        print("ports", ports)
+        sers = list()
+        for port in ports:
+            ser = serial.Serial(port, 115200) #, timeout=1, bytesize=8, parity='N', stopbits=2, xonxoff=1, rtscts=1)
+            sers.append(ser)
+        has_ser=True
+
+    l_final = []
+    for ser in sers:
+        l = read_serial(ser)
+        l_final += l
+    return l_final
+
+@app.route('/serial')
+def test_serial():
+    l = parse_serial()
+    return str(l[0]) +" and " + str(l[1]) #+ " and " + str(l[2]) + " and " + str(l[3])
+
+
 @app.route('/getData')
 def get_points_data():
     global idx, center1_prev, center2_prev
@@ -114,32 +142,35 @@ def get_points_data():
     
     center1, center2 = tracker()
     if center1 is None and center1_prev is not None:
-    	center1 = center1_prev
+        center1 = center1_prev
     if center2 is None and center2_prev is not None:
-    	center2 = center2_prev
+        center2 = center2_prev
     data["gx"] = center1[0] if center1 else None
     data["gy"] = center1[1] if center1 else None
     data["rx"] = center2[0] if center2 else None
     data["ry"] = center2[1] if center2 else None
     center1_prev, center2_prev = center1, center2
 
-    data["gpressed"] = 1
-    data["gjstick"] = -1
-    data["rpressed"] = 1
-    data["rjstick"] = -1
+    se = parse_serial()
+    print('se', se)
+    data["gpressed"] = 1 - se[0]# 1-se[0]
+    data["gjstick"] =  se[1]# se[1]
+    data["rpressed"] = 1 - se[2]
+    data["rjstick"] = se[3]
     
     return json.dumps(data)
 
 ## run the server app
 if __name__ == "__main__":
+    has_ser = False
     # Init tracker
     vs = cv2.VideoCapture(0)
     time.sleep(2.0)
     if not vs.isOpened():
-    	vs.open()
+        vs.open()
 
     idx = -1
-    app.run(host='0.0.0.0', port=8010, debug=True)
+    app.run(host='0.0.0.0', port=8020, debug=True)
 
 
     # End the application
